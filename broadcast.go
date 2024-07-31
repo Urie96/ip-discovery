@@ -73,9 +73,9 @@ func Broadcast(prefix []byte, serverPort int, crypter Crypter, timeout time.Dura
 			continue
 		}
 		if resp.Code != 0 {
-			fmt.Printf("%s error: %s", raddr, resp.Body)
+			fmt.Printf("%s error: %s\n", raddr, resp.Body)
 		} else {
-			fmt.Printf("%s %s", raddr, resp.Body)
+			fmt.Printf("%s %s\n", raddr, resp.Body)
 		}
 	}
 }

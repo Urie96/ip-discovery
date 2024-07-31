@@ -105,12 +105,7 @@ func handleEcho(ctx context.Context, body string) (string, error) {
 }
 
 func handleShell(ctx context.Context, body string) (string, error) {
-	cmd := exec.Command("sh", "-c", body)
-	err := cmd.Run()
-	if err != nil {
-		return "", err
-	}
-	b, err := cmd.CombinedOutput()
+	b, err := exec.Command("sh", "-c", body).CombinedOutput()
 	if err != nil {
 		return "", err
 	}
