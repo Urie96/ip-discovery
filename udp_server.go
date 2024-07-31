@@ -37,7 +37,9 @@ func Serve(port int, prefix []byte, crypter Crypter) error {
 		ctx := context.TODO()
 
 		go func() {
+			log.Println(req)
 			resp := dispatcher(ctx, req)
+			log.Println(resp)
 			respb := buildPayload(prefix, id, resp, crypter)
 			pc.WriteTo(respb, addr)
 		}()
@@ -71,10 +73,11 @@ func parsePayload(buf []byte, expectPrefix []byte, dst interface{}, crypter Cryp
 		return
 	}
 	idBuf := [8]byte{}
-	dataBuf := make([]byte, len(buf)-len(idBuf))
+	dataBuf := make([]byte, len(decypted)-len(idBuf))
 	SplitBytes(decypted, idBuf[:], dataBuf)
 	err = json.Unmarshal(dataBuf, dst)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	return true, BytesToUint64(idBuf)
