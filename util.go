@@ -1,6 +1,6 @@
 package main
 
-func uint64ToBytes(v uint64) [8]byte {
+func Uint64ToBytes(v uint64) [8]byte {
 	b := [8]byte{}
 	b[0] = byte(v)
 	b[1] = byte(v >> 8)
@@ -13,12 +13,12 @@ func uint64ToBytes(v uint64) [8]byte {
 	return b
 }
 
-func bytesToUint64(b [8]byte) uint64 {
+func BytesToUint64(b [8]byte) uint64 {
 	return uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24 |
 		uint64(b[4])<<32 | uint64(b[5])<<40 | uint64(b[6])<<48 | uint64(b[7])<<56
 }
 
-func splitBytes(src []byte, dsts ...[]byte) bool {
+func SplitBytes(src []byte, dsts ...[]byte) bool {
 	i := 0
 	for _, dst := range dsts {
 		if len(src) < i {
@@ -28,4 +28,17 @@ func splitBytes(src []byte, dsts ...[]byte) bool {
 		i += len(dst)
 	}
 	return true
+}
+
+func JoinBytes(s ...[]byte) []byte {
+	n := 0
+	for _, v := range s {
+		n += len(v)
+	}
+
+	b, i := make([]byte, n), 0
+	for _, v := range s {
+		i += copy(b[i:], v)
+	}
+	return b
 }

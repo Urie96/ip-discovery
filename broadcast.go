@@ -3,9 +3,6 @@ package main
 import (
 	"fmt"
 	"net"
-	"os"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -31,23 +28,25 @@ func getAllBroadcast() []net.IP {
 	return allBroadcast
 }
 
-func findOtherDevices(payload) {
+func Broadcast(prefix []byte, serverPort int, crypter Crypter, timeout time.Duration) {
 	pc, err := net.ListenPacket("udp4", "")
 	if err != nil {
 		panic(err)
 	}
 	defer pc.Close()
-
-	payload := PAYLOAD_PREFIX + strconv.Itoa(int(time.Now().UnixMicro()))
+	id := uint64(time.Now().UnixMilli())
 
 	go func() {
 		for _, broadcast := range getAllBroadcast() {
-			addr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("%s:%d", broadcast, PORT))
+			addr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("%s:%d", broadcast, serverPort))
 			if err != nil {
 				panic(err)
 			}
 
-			_, err = pc.WriteTo([]byte(payload), addr)
+			_, err = pc.WriteTo(buildPayload(prefix, id, Request{
+				Method: "echo",
+				Body:   "sdf",
+			}, crypter), addr)
 			if err != nil {
 				panic(err)
 			}
@@ -55,23 +54,21 @@ func findOtherDevices(payload) {
 	}()
 
 	buf := make([]byte, 1024)
-	set := make(map[string]bool)
 	for {
-		pc.SetDeadline(time.Now().Add(time.Microsecond * time.Duration(TIMEOUT_MS)))
+		pc.SetDeadline(time.Now().Add(timeout))
 		n, raddr, err := pc.ReadFrom(buf)
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-				os.Exit(0)
+				return
 			} else {
 				panic(err)
 			}
 		}
-		if string(buf[:n]) == payload {
-			ip := strings.SplitN(raddr.String(), ":", 2)[0]
-			if !set[ip] {
-				set[ip] = true
-				fmt.Println(ip)
-			}
+		var resp Response
+		ok, respID := parsePayload(buf[:n], prefix, &resp, crypter)
+		if !ok || respID != id {
+			continue
 		}
+		fmt.Println(raddr, resp)
 	}
 }

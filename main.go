@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"time"
 )
 
 func main() {
@@ -23,8 +24,8 @@ func main() {
 	prefix := []byte("github.com/urie96/ip-discovery")
 
 	if serverMode {
-		server()
+		Serve(port, prefix, crypter)
 	} else {
-		findOtherDevices()
+		Broadcast(prefix, port, crypter, time.Microsecond*time.Duration(timeoutMs))
 	}
 }
