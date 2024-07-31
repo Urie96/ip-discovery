@@ -23,9 +23,10 @@ Help:
 
 ```sh
 $ ip-discovery --help
-Usage of ip-discovery:
+-exec string
+    	server response command output when received broadcast
   -k string
-    	payload key
+    	secret key (no crypter if leave empty)
   -p int
     	server port (default 25615)
   -s	server mode

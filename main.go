@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"time"
 )
 
@@ -27,6 +28,9 @@ func main() {
 	prefix := []byte("github.com/urie96/ip-discovery")
 
 	if serverMode {
+		if secretKey == "" {
+			log.Println("WARNING: serving shell without crypter is DANGEROUS")
+		}
 		Serve(port, prefix, crypter)
 	} else {
 		Broadcast(prefix, port, crypter, time.Millisecond*time.Duration(timeoutMs), serverCmd)
